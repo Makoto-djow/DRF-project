@@ -10,10 +10,13 @@ class Course(models.Model):
         blank=True,
         null=True,
         verbose_name="Изображение",
-        help_text="Добавьте изображение"
+        help_text="Добавьте изображение",
     )
     description = models.TextField(
-        blank=True, null=True, verbose_name="Описание курса", help_text="Укажите описание курса"
+        blank=True,
+        null=True,
+        verbose_name="Описание курса",
+        help_text="Укажите описание курса",
     )
 
     class Meta:
@@ -26,17 +29,26 @@ class Lesson(models.Model):
         max_length=150, verbose_name="Урок", help_text="Укажите название урока"
     )
     course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, verbose_name="Курс", help_text="Выберите курс"
+        Course,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name="Курс",
+        help_text="Выберите курс",
+        related_name="lesson",
     )
     description = models.TextField(
-        blank=True, null=True, verbose_name="Описание урока", help_text="Укажите описание урока"
+        blank=True,
+        null=True,
+        verbose_name="Описание урока",
+        help_text="Укажите описание урока",
     )
     image = models.ImageField(
         upload_to="course/lesson/image",
         blank=True,
         null=True,
         verbose_name="Изображение",
-        help_text="Добавьте изображение"
+        help_text="Добавьте изображение",
     )
     link_to_video = models.CharField(
         max_length=150,
