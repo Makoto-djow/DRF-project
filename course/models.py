@@ -1,7 +1,17 @@
 from django.db import models
+from django.contrib.auth import get_user_model
+
+METHOD_CHOICE = [
+    ('CASH', 'оплата наличными'),
+    ('TRAN', 'перевод на счет')
+]
+
+User = get_user_model()
 
 
 class Course(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь', null=True, blank=True, default=None)
+
     name = models.CharField(
         max_length=120, verbose_name="Название куса", help_text="Укажите название курса"
     )
@@ -25,6 +35,8 @@ class Course(models.Model):
 
 
 class Lesson(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь', null=True, blank=True, default=None)
+
     name = models.CharField(
         max_length=150, verbose_name="Урок", help_text="Укажите название урока"
     )
@@ -61,3 +73,13 @@ class Lesson(models.Model):
     class Meta:
         verbose_name = "Урок"
         verbose_name_plural = "Уроки"
+
+
+class Payment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
+    date_of_pay = models.DateField(auto_now=True, verbose_name='дата оплаты')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, blank=True, null=True,)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, blank=True, null=True,)
+    amount = models.PositiveIntegerField()
+    method = models.CharField(max_length=4, choices=METHOD_CHOICE)
+    filterset_fields = ['category', 'in_stock']
