@@ -1,4 +1,9 @@
 from django.shortcuts import render
+from django.shortcuts import get_object_or_404
+
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from rest_framework.generics import (
     CreateAPIView,
     DestroyAPIView,
@@ -14,7 +19,9 @@ from rest_framework.permissions import IsAuthenticated
 from course import models, serializers
 from users.permissions import IsModerator, UserListOnly, IsOwner
 
-from course.models import Course, Lesson
+from course.models import Course, Lesson, Subscription
+from course.paginators import CoursePagination, LessonPagination
+
 from course.serializers import (
     CourseSerializer,
     LessonSerializer,
@@ -24,6 +31,7 @@ from course.serializers import (
 
 class CourseViewSet(ModelViewSet):
     queryset = Course.objects.all()
+    pagination_class = CoursePagination
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -54,6 +62,7 @@ class LessonListAPIView(ListAPIView):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = LessonPagination
 
 
 class LessonRetrieveAPIView(RetrieveAPIView):
@@ -82,3 +91,21 @@ class PaymentListAPIView(generics.ListAPIView):
     filterset_fields = ['method', 'lesson', 'course']
     ordering_fields = ['payment_date']
     permission_classes = [IsAuthenticated]
+
+
+class SubscriptionAPIView(APIView):
+    def post(self, *args, **kwargs):
+        user = self.request.user
+        course = get_object_or_404(Course.objects.filter(pk=self.request.data.get('course')))
+        subscription_data = {
+            'user': user,
+            'course': course
+        }
+        is_subscribed = Subscription.objects.filter(**subscription_data).exists()
+        if is_subscribed:
+            Subscription.objects.filter(**subscription_data).delete()
+            message = 'unsubscribed'
+        else:
+            Subscription.objects.create(**subscription_data)
+            message = 'subscribed'
+        return Response({'message': message})

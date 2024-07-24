@@ -83,3 +83,19 @@ class Payment(models.Model):
     amount = models.PositiveIntegerField()
     method = models.CharField(max_length=4, choices=METHOD_CHOICE)
     filterset_fields = ['category', 'in_stock']
+
+    class Meta:
+        verbose_name = "Платеж"
+        verbose_name_plural = "Платежи"
+
+
+class Subscription(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='subscription')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscription')
+
+    class Meta:
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+        constraints = [
+            models.UniqueConstraint(fields=['course', 'user'], name='unique_subscription')
+        ]
