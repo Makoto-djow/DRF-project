@@ -1,5 +1,4 @@
 from django.test import TestCase
-
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient, APITestCase
@@ -14,17 +13,15 @@ class LessonTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.client = APIClient()
-        cls.user = User(email='test@mail.com')
-        cls.user.set_password('2222')
-        cls.user.save()
+        cls.user = User.objects.create_user(email='test@mail.com', password='2222')
         cls.lesson = Lesson.objects.create(name='урок', user=cls.user)
 
     def test_create(self):
         data = {
-            'name': 'test2'
+            'name': 'урок'
         }
         self.client.force_authenticate(self.user)
-        response = self.client.post(reverse('course:lessons-create'), data=data, format='json')
+        response = self.client.post(reverse('course:lessons_create'), data=data, format='json')
         self.assertEqual(
             response.status_code,
             status.HTTP_201_CREATED
@@ -35,7 +32,7 @@ class LessonTestCase(APITestCase):
 
     def test_retrieve(self):
         self.client.force_authenticate(self.user)
-        response = self.client.get(reverse('course:lessons-retrieve', kwargs={'pk': 1}))
+        response = self.client.get(reverse('course:lessons_retrieve', kwargs={'pk': 1}))
         self.assertEqual(
             response.data,
             {
@@ -54,7 +51,7 @@ class LessonTestCase(APITestCase):
 
     def test_list(self):
         self.client.force_authenticate(self.user)
-        response = self.client.get(reverse('course:lessons-list'))
+        response = self.client.get(reverse('course:lessons_list'))
         data = {
             "count": 1,
             "next": None,
@@ -84,7 +81,7 @@ class LessonTestCase(APITestCase):
             'name': 'тест'
         }
         self.client.force_authenticate(self.user)
-        response = self.client.put(reverse('course:lessons-update', kwargs={'pk': 1}), data=data, format='json')
+        response = self.client.put(reverse('course:lessons_update', kwargs={'pk': 1}), data=data, format='json')
         self.assertEqual(
             response.data,
             {
@@ -106,7 +103,7 @@ class LessonTestCase(APITestCase):
 
     def test_delete(self):
         self.client.force_authenticate(self.user)
-        response = self.client.delete(reverse('course:lessons-delete', kwargs={'pk': 1}))
+        response = self.client.delete(reverse('course:lessons_delete', kwargs={'pk': 1}))
         self.assertEqual(
             response.status_code,
             status.HTTP_204_NO_CONTENT
@@ -129,8 +126,9 @@ class SubscriptionTestCase(APITestCase):
         }
         response = self.client.post(reverse('course:subscription'), data=data, format='json')
         self.assertEqual(
-            response.data, {'course': 'subscribed'}
+            response.data['message'], 'subscribed'
         )
+
         response = self.client.post(reverse('course:subscription'), data=data, format='json')
         self.assertEqual(
             response.data, {'message': 'unsubscribed'}

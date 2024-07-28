@@ -32,6 +32,9 @@ class CourseDetailSerializer(ModelSerializer):
 class CourseSerializer(ModelSerializer):
     lessons = LessonSerializer(many=True, read_only=True)
 
+    def get_subscription(self, obj):
+        return obj.subscription.filter(user=self.context.get('request').user).exists()
+
     class Meta:
         model = Course
         fields = "__all__"
