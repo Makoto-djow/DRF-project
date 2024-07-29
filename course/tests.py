@@ -13,7 +13,9 @@ class LessonTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.client = APIClient()
-        cls.user = User.objects.create_user(email='test@mail.com', password='2222')
+        cls.user = User(email='test@mail.com')
+        cls.user.set_password('2222')
+        cls.user.save()
         cls.lesson = Lesson.objects.create(name='урок', user=cls.user)
 
     def test_create(self):
