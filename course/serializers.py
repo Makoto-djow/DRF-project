@@ -25,7 +25,7 @@ class CourseDetailSerializer(ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ("name", "description", "image", "count_lesson_in_course", "lesson")
+        fields = ("name", "description", "image", "count_lesson_in_course", "lesson", "subscription")
         validators = [YouTubeLinkOnlyValidator(fields=['name', 'description'])]
 
 
