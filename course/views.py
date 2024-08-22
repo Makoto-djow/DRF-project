@@ -28,6 +28,13 @@ from course.serializers import (
     CourseDetailSerializer,
 )
 
+from drf_yasg.utils import swagger_auto_schema
+from django.utils.decorators import method_decorator
+
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_description="description from swagger_auto_schema via method_decorator"
+))
+
 
 class CourseViewSet(ModelViewSet):
     queryset = Course.objects.all()
