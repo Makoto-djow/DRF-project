@@ -28,6 +28,12 @@ class Course(models.Model):
         verbose_name="Описание курса",
         help_text="Укажите описание курса",
     )
+    update = models.ManyToManyField(
+        User,
+        blank=True,
+        null=True,
+        related_name='update'
+    )
 
     class Meta:
         verbose_name = "Курс"
