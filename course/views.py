@@ -1,4 +1,9 @@
 from django.shortcuts import render
+from django.shortcuts import get_object_or_404
+
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from rest_framework.generics import (
     CreateAPIView,
     DestroyAPIView,
@@ -14,16 +19,28 @@ from rest_framework.permissions import IsAuthenticated
 from course import models, serializers
 from users.permissions import IsModerator, UserListOnly, IsOwner
 
-from course.models import Course, Lesson
+from course.models import Course, Lesson, Subscription
+from course.paginators import CoursePagination, LessonPagination
+
 from course.serializers import (
     CourseSerializer,
     LessonSerializer,
     CourseDetailSerializer,
 )
 
+from drf_yasg.utils import swagger_auto_schema
+from django.utils.decorators import method_decorator
+from rest_framework.decorators import action
+from course.tasks import send_notification
+
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_description="description from swagger_auto_schema via method_decorator"
+))
+
 
 class CourseViewSet(ModelViewSet):
     queryset = Course.objects.all()
+    pagination_class = CoursePagination
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -41,6 +58,17 @@ class CourseViewSet(ModelViewSet):
             self.permission_classes = [IsOwner|IsModerator]
         return [permission() for permission in [IsAuthenticated] + self.permission_classes]
 
+    @action(detail=True, methods=("post",))
+    def update(self, request, pk):
+        course = get_object_or_404(Course, pk=pk)
+        if course.update.filter(pk=request.user.pk).exists():
+            course.update.remove(request.user)
+        else:
+            course.update.add(request.user)
+            send_notification.delay(course.update.email)
+        serializer = self.get_serializer(course)
+        return Response(data=serializer.data)
+
 
 class LessonCreateAPIView(CreateAPIView):
     permission_classes = [IsAuthenticated, ~IsModerator]
@@ -54,6 +82,7 @@ class LessonListAPIView(ListAPIView):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = LessonPagination
 
 
 class LessonRetrieveAPIView(RetrieveAPIView):
@@ -82,3 +111,21 @@ class PaymentListAPIView(generics.ListAPIView):
     filterset_fields = ['method', 'lesson', 'course']
     ordering_fields = ['payment_date']
     permission_classes = [IsAuthenticated]
+
+
+class SubscriptionAPIView(APIView):
+    def post(self, *args, **kwargs):
+        user = self.request.user
+        course = get_object_or_404(Course.objects.filter(pk=self.request.data.get('course')))
+        subscription_data = {
+            'user': user,
+            'course': course
+        }
+        is_subscribed = Subscription.objects.filter(**subscription_data).exists()
+        if is_subscribed:
+            Subscription.objects.filter(**subscription_data).delete()
+            message = 'unsubscribed'
+        else:
+            Subscription.objects.create(**subscription_data)
+            message = 'subscribed'
+        return Response({'message': message})

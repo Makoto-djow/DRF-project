@@ -28,6 +28,12 @@ class Course(models.Model):
         verbose_name="Описание курса",
         help_text="Укажите описание курса",
     )
+    update = models.ManyToManyField(
+        User,
+        blank=True,
+        null=True,
+        related_name='update'
+    )
 
     class Meta:
         verbose_name = "Курс"
@@ -87,3 +93,15 @@ class Payment(models.Model):
     class Meta:
         verbose_name = "Платеж"
         verbose_name_plural = "Платежи"
+
+
+class Subscription(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='subscription')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscription')
+
+    class Meta:
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+        constraints = [
+            models.UniqueConstraint(fields=['course', 'user'], name='unique_subscription')
+        ]

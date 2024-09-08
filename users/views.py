@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 
 
 from users import models, serializers
+from users.models import Payment
+from users.services import convert_rub_to_dollars, create_stripe_session, create_stripe_price
 
 
 class UserCreateAPIView(generics.CreateAPIView):
@@ -16,6 +18,20 @@ class UserCreateAPIView(generics.CreateAPIView):
         raw_password = serializer.validated_data.get('password')
         password = make_password(raw_password)
         serializer.save(password=password)
+
+
+class PaymentCreateAPIView(generics.CreateAPIView):
+    serializer_class = serializers.PaymentSerializer
+    queryset = Payment.objects.all()
+
+    def perform_create(self, serializer):
+        payment = serializer.save(user=self.request.user)
+        amount_in_dollars = convert_rub_to_dollars(payment.amount)
+        price = create_stripe_price(amount_in_dollars)
+        session_id, payment_link = create_stripe_session(price)
+        payment.session_id = session_id
+        payment_link = payment_link
+        payment.save()
 
 
 class UserListAPIView(generics.ListAPIView):
