@@ -25,6 +25,8 @@ stripe = "^10.8.0"
 redis = "^5.0.8"
 forex-python = "^1.8"
 setuptools = "^72.2.0"
+celery = "^5.4.0"
+django-celery-beat = "^2.7.0"
 
 
 [build-system]

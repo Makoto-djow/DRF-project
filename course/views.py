@@ -30,6 +30,8 @@ from course.serializers import (
 
 from drf_yasg.utils import swagger_auto_schema
 from django.utils.decorators import method_decorator
+from rest_framework.decorators import action
+from course.tasks import send_notification
 
 @method_decorator(name='list', decorator=swagger_auto_schema(
     operation_description="description from swagger_auto_schema via method_decorator"
@@ -55,6 +57,17 @@ class CourseViewSet(ModelViewSet):
         else:
             self.permission_classes = [IsOwner|IsModerator]
         return [permission() for permission in [IsAuthenticated] + self.permission_classes]
+
+    @action(detail=True, methods=("post",))
+    def update(self, request, pk):
+        course = get_object_or_404(Course, pk=pk)
+        if course.update.filter(pk=request.user.pk).exists():
+            course.update.remove(request.user)
+        else:
+            course.update.add(request.user)
+            send_notification.delay(course.update.email)
+        serializer = self.get_serializer(course)
+        return Response(data=serializer.data)
 
 
 class LessonCreateAPIView(CreateAPIView):
